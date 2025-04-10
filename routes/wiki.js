@@ -1,5 +1,5 @@
 const express = require('express');
-const Wiki = require('../models/Wiki');
+const { Wiki, User } = require('../models/sequelize'); // Updated import for Sequelize
 const { auth } = require('../middleware/auth');
 const router = express.Router();
 
@@ -9,25 +9,23 @@ router.post('/', auth, async (req, res) => {
         const { title, content, categories, tags, references, visibility } = req.body;
 
         // Check for duplicate title
-        const existingWiki = await Wiki.findOne({ title });
+        const existingWiki = await Wiki.findOne({ where: { title } });
         if (existingWiki) {
             return res.status(400).json({
                 message: 'A wiki post with this title already exists'
             });
         }
 
-        const wiki = new Wiki({
+        const wiki = await Wiki.create({
             title,
             content,
-            author: req.user._id,
+            authorId: req.user.id, // Updated for Sequelize
             categories: categories ? categories.split(',').map(cat => cat.trim()) : [],
             tags: tags ? tags.split(',').map(tag => tag.trim()) : [],
             references: references || [],
             visibility,
-            lastEditedBy: req.user._id
+            lastEditedBy: req.user.id // Updated for Sequelize
         });
-
-        await wiki.save();
 
         res.status(201).json({
             message: 'Wiki post created successfully',
@@ -64,14 +62,15 @@ router.get('/', async (req, res) => {
         }
 
         // Execute query with pagination
-        const wikis = await Wiki.find(query)
-            .sort({ createdAt: -1 })
-            .skip(skip)
-            .limit(limit)
-            .populate('author', 'username profilePicture')
-            .populate('lastEditedBy', 'username');
+        const wikis = await Wiki.findAll({
+            where: query,
+            order: [['createdAt', 'DESC']],
+            offset: skip,
+            limit: limit,
+            include: [{ model: User, as: 'author', attributes: ['username', 'profilePicture'] }]
+        });
 
-        const total = await Wiki.countDocuments(query);
+        const total = await Wiki.count({ where: query });
 
         res.json({
             wikis,
@@ -90,11 +89,9 @@ router.get('/', async (req, res) => {
 // Get single wiki post
 router.get('/:id', async (req, res) => {
     try {
-        const wiki = await Wiki.findById(req.params.id)
-            .populate('author', 'username profilePicture')
-            .populate('contributors.user', 'username profilePicture')
-            .populate('lastEditedBy', 'username')
-            .populate('revisionHistory.editedBy', 'username');
+        const wiki = await Wiki.findByPk(req.params.id, {
+            include: [{ model: User, as: 'author', attributes: ['username', 'profilePicture'] }]
+        });
 
         if (!wiki) {
             return res.status(404).json({ message: 'Wiki post not found' });
@@ -116,15 +113,14 @@ router.get('/:id', async (req, res) => {
 // Update wiki post
 router.patch('/:id', auth, async (req, res) => {
     try {
-        const wiki = await Wiki.findById(req.params.id);
+        const wiki = await Wiki.findByPk(req.params.id);
 
         if (!wiki) {
             return res.status(404).json({ message: 'Wiki post not found' });
         }
 
         // Check if user has permission to edit
-        if (wiki.author.toString() !== req.user._id.toString() && 
-            !wiki.contributors.some(c => c.user.toString() === req.user._id.toString())) {
+        if (wiki.authorId !== req.user.id) {
             return res.status(403).json({ message: 'Not authorized to edit this wiki post' });
         }
 
@@ -136,20 +132,6 @@ router.patch('/:id', auth, async (req, res) => {
             return res.status(400).json({ message: 'Invalid updates' });
         }
 
-        // Add to contributors if not already present
-        if (wiki.author.toString() !== req.user._id.toString()) {
-            const isContributor = wiki.contributors.some(
-                c => c.user.toString() === req.user._id.toString()
-            );
-            
-            if (!isContributor) {
-                wiki.contributors.push({
-                    user: req.user._id,
-                    contribution: 'Content update'
-                });
-            }
-        }
-
         // Update fields
         updates.forEach(update => {
             if (update === 'categories' || update === 'tags') {
@@ -159,7 +141,7 @@ router.patch('/:id', auth, async (req, res) => {
             }
         });
 
-        wiki.lastEditedBy = req.user._id;
+        wiki.lastEditedBy = req.user.id; // Updated for Sequelize
 
         await wiki.save();
         res.json(wiki);
@@ -175,15 +157,17 @@ router.patch('/:id', auth, async (req, res) => {
 router.delete('/:id', auth, async (req, res) => {
     try {
         const wiki = await Wiki.findOne({
-            _id: req.params.id,
-            author: req.user._id
+            where: {
+                id: req.params.id,
+                authorId: req.user.id
+            }
         });
 
         if (!wiki) {
             return res.status(404).json({ message: 'Wiki post not found' });
         }
 
-        await wiki.remove();
+        await wiki.destroy();
         res.json({ message: 'Wiki post deleted successfully' });
     } catch (error) {
         res.status(500).json({
@@ -196,20 +180,20 @@ router.delete('/:id', auth, async (req, res) => {
 // Like/Unlike wiki post
 router.post('/:id/like', auth, async (req, res) => {
     try {
-        const wiki = await Wiki.findById(req.params.id);
+        const wiki = await Wiki.findByPk(req.params.id);
         
         if (!wiki) {
             return res.status(404).json({ message: 'Wiki post not found' });
         }
 
-        const likeIndex = wiki.likes.indexOf(req.user._id);
+        const likeIndex = wiki.likes.indexOf(req.user.id);
 
         if (likeIndex > -1) {
             // Unlike
             wiki.likes.splice(likeIndex, 1);
         } else {
             // Like
-            wiki.likes.push(req.user._id);
+            wiki.likes.push(req.user.id);
         }
 
         await wiki.save();
@@ -228,7 +212,7 @@ router.post('/:id/like', auth, async (req, res) => {
 // Add revision comment
 router.post('/:id/revisions', auth, async (req, res) => {
     try {
-        const wiki = await Wiki.findById(req.params.id);
+        const wiki = await Wiki.findByPk(req.params.id);
         
         if (!wiki) {
             return res.status(404).json({ message: 'Wiki post not found' });
@@ -236,15 +220,16 @@ router.post('/:id/revisions', auth, async (req, res) => {
 
         const revision = {
             content: wiki.content,
-            editedBy: req.user._id,
+            editedBy: req.user.id,
             changeDescription: req.body.changeDescription
         };
 
         wiki.revisionHistory.push(revision);
         await wiki.save();
 
-        const populatedWiki = await Wiki.findById(wiki._id)
-            .populate('revisionHistory.editedBy', 'username');
+        const populatedWiki = await Wiki.findByPk(wiki.id, {
+            include: [{ model: User, as: 'revisionHistory', attributes: ['username'] }]
+        });
 
         res.status(201).json(
             populatedWiki.revisionHistory[populatedWiki.revisionHistory.length - 1]
