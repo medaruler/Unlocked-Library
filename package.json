@@ -1,0 +1,34 @@
+{
+  "name": "unlocked-library",
+  "version": "1.0.0",
+  "description": "An uncensored video and wiki sharing platform",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js",
+    "test": "jest"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.0.0",
+    "@aws-sdk/s3-request-presigner": "^3.0.0",
+    "bcryptjs": "^2.4.3",
+    "cloudinary": "^2.6.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.17.1",
+    "express-rate-limit": "^6.0.0",
+    "jsonwebtoken": "^9.0.0",
+    "mongoose": "^6.13.8",
+    "multer": "^1.4.5-lts.1",
+    "multer-storage-cloudinary": "^4.0.0",
+    "validator": "^13.7.0"
+  },
+  "devDependencies": {
+    "jest": "^29.0.0",
+    "nodemon": "^2.0.15",
+    "supertest": "^6.1.3"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  }
+}
