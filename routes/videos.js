@@ -1,57 +1,20 @@
 const express = require('express');
 const multer = require('multer');
-const cloudinary = require('cloudinary').v2;
-const { CloudinaryStorage } = require('multer-storage-cloudinary');
-const Video = require('../models/Video');
+const { uploadFile, deleteFile } = require('../config/google-cloud');
+const Video = require('../models/sequelize/Video'); // Updated import for Sequelize
 const { auth } = require('../middleware/auth');
 const router = express.Router();
 
-// Configure Cloudinary storage for videos
-const videoStorage = new CloudinaryStorage({
-    cloudinary: cloudinary,
-    params: {
-        folder: 'videos',
-        resource_type: 'video',
-        allowed_formats: ['mp4', 'webm']
-    }
-});
-
-// Configure Cloudinary storage for thumbnails
-const thumbnailStorage = new CloudinaryStorage({
-    cloudinary: cloudinary,
-    params: {
-        folder: 'thumbnails',
-        allowed_formats: ['jpg', 'png', 'jpeg']
-    }
-});
-
-// Configure multer for video and thumbnail upload
-const videoUpload = multer({
-    storage: videoStorage,
+// Configure multer for memory storage
+const upload = multer({
+    storage: multer.memoryStorage(),
     limits: {
         fileSize: parseInt(process.env.MAX_FILE_SIZE) || 100 * 1024 * 1024 // 100MB default
     }
 });
 
-const thumbnailUpload = multer({
-    storage: thumbnailStorage,
-    limits: {
-        fileSize: 5 * 1024 * 1024 // 5MB limit for thumbnails
-    }
-});
-
-const upload = {
-    fields: [
-        { name: 'video', maxCount: 1 },
-        { name: 'thumbnail', maxCount: 1 }
-    ]
-};
-
 // Upload video
-router.post('/', auth, multer({
-    storage: videoStorage,
-    limits: { fileSize: parseInt(process.env.MAX_FILE_SIZE) || 100 * 1024 * 1024 }
-}).fields([
+router.post('/', auth, upload.fields([
     { name: 'video', maxCount: 1 },
     { name: 'thumbnail', maxCount: 1 }
 ]), async (req, res) => {
@@ -62,15 +25,16 @@ router.post('/', auth, multer({
             return res.status(400).json({ message: 'Both video and thumbnail are required' });
         }
 
-        const videoFile = req.files['video'][0];
-        const thumbnailFile = req.files['thumbnail'][0];
+        // Upload files to Google Cloud Storage
+        const videoUrl = await uploadFile(req.files['video'][0], 'videos');
+        const thumbnailUrl = await uploadFile(req.files['thumbnail'][0], 'thumbnails');
 
         const video = new Video({
             title,
             description,
-            videoUrl: videoFile.path,
-            thumbnailUrl: thumbnailFile.path,
-            author: req.user._id,
+            videoUrl,
+            thumbnailUrl,
+            author: req.user.id, // Updated for Sequelize
             category,
             tags: tags ? tags.split(',').map(tag => tag.trim()) : []
         });
@@ -88,6 +52,7 @@ router.post('/', auth, multer({
         });
     }
 });
+
 
 // Get all videos (with pagination)
 router.get('/', async (req, res) => {
