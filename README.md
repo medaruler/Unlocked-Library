@@ -1,34 +1,48 @@
-# The Unlocked Library - Uncensored Video and Wiki Platform
+# Unlocked Library
 
-A modern, uncensored platform for sharing videos and wiki content with complete freedom of expression. Built with Node.js, Express, MongoDB, and modern frontend technologies.
+An uncensored video and wiki sharing platform built with Node.js, Express, and MongoDB.
 
 ## Features
 
-### Core Features
-- 🎥 Video sharing and streaming
-- 📚 Wiki content creation and management
-- 🌓 Dark/Light mode support
-- 🔐 Secure authentication system
-- 🎨 Modern, responsive UI with Tailwind CSS
-- 💭 Uncensored content sharing
-- 🏛️ Political expression freedom
-
-### Technical Features
-- JWT-based authentication
-- AWS S3 video storage
-- MongoDB database
-- Rich text editing
-- Custom video player
-- Real-time search
-- Offline support with Service Workers
-- Responsive design
+- User Authentication (Sign up, Login)
+- Video Upload and Sharing
+- Wiki Creation and Collaboration
+- Content Management
+- User Profiles
 
 ## Prerequisites
 
-- Node.js (v14 or higher)
+- Node.js >= 14.0.0
 - MongoDB
-- AWS Account (for video storage)
-- npm or yarn
+- AWS S3 Account (for video storage)
+- Cloudinary Account (for image storage)
+
+## Environment Variables
+
+Create a `.env` file in the root directory with the following variables:
+
+```env
+# Server
+PORT=3000
+NODE_ENV=development
+
+# MongoDB
+MONGODB_URI=your_mongodb_connection_string
+
+# JWT
+JWT_SECRET=your_jwt_secret
+
+# AWS S3
+AWS_ACCESS_KEY_ID=your_aws_access_key
+AWS_SECRET_ACCESS_KEY=your_aws_secret_key
+AWS_REGION=your_aws_region
+AWS_BUCKET_NAME=your_bucket_name
+
+# Cloudinary
+CLOUDINARY_CLOUD_NAME=your_cloud_name
+CLOUDINARY_API_KEY=your_api_key
+CLOUDINARY_API_SECRET=your_api_secret
+```
 
 ## Installation
 
@@ -43,132 +57,125 @@ cd unlocked-library
 npm install
 ```
 
-3. Create a `.env` file in the root directory:
-```env
-# Server Configuration
-PORT=8000
-NODE_ENV=development
-
-# MongoDB Configuration
-MONGODB_URI=mongodb://localhost:27017/unlocked-library
-
-# JWT Configuration
-JWT_SECRET=your_jwt_secret_key_here
-
-# AWS Configuration
-AWS_ACCESS_KEY_ID=your_aws_access_key
-AWS_SECRET_ACCESS_KEY=your_aws_secret_key
-AWS_REGION=your_aws_region
-AWS_BUCKET_NAME=your_bucket_name
-```
-
-4. Start the development server:
+3. Start the development server:
 ```bash
 npm run dev
 ```
 
-## Project Structure
-
-```
-unlocked-library/
-├── public/
-│   ├── js/
-│   │   ├── main.js         # Main JavaScript file
-│   │   ├── components.js   # UI components
-│   │   ├── utils.js        # Utility functions
-│   │   ├── config.js       # Frontend configuration
-│   │   └── service-worker.js # Offline functionality
-│   └── styles.css          # Custom styles
-├── models/
-│   ├── User.js            # User model
-│   ├── Video.js           # Video model
-│   └── Wiki.js            # Wiki model
-├── routes/
-│   ├── auth.js            # Authentication routes
-│   ├── videos.js          # Video routes
-│   └── wiki.js            # Wiki routes
-├── middleware/
-│   └── auth.js            # Authentication middleware
-├── server.js              # Express server setup
-└── package.json           # Project dependencies
-```
-
-## API Endpoints
+## API Documentation
 
 ### Authentication
-- POST `/api/auth/register` - Register new user
-- POST `/api/auth/login` - Login user
-- GET `/api/auth/profile` - Get user profile
-- POST `/api/auth/logout` - Logout user
+
+#### Register a new user
+```http
+POST /api/auth/register
+Content-Type: application/json
+
+{
+    "username": "string",
+    "email": "string",
+    "password": "string"
+}
+```
+
+#### Login
+```http
+POST /api/auth/login
+Content-Type: application/json
+
+{
+    "username": "string",
+    "password": "string"
+}
+```
 
 ### Videos
-- POST `/api/videos` - Upload video
-- GET `/api/videos` - List videos
-- GET `/api/videos/:id` - Get single video
-- PATCH `/api/videos/:id` - Update video
-- DELETE `/api/videos/:id` - Delete video
-- POST `/api/videos/:id/like` - Like/unlike video
-- POST `/api/videos/:id/comments` - Add comment
 
-### Wiki
-- POST `/api/wiki` - Create wiki post
-- GET `/api/wiki` - List wiki posts
-- GET `/api/wiki/:id` - Get single wiki post
-- PATCH `/api/wiki/:id` - Update wiki post
-- DELETE `/api/wiki/:id` - Delete wiki post
-- POST `/api/wiki/:id/like` - Like/unlike wiki post
-- POST `/api/wiki/:id/revisions` - Add revision
+#### Upload a video
+```http
+POST /api/videos/upload
+Content-Type: multipart/form-data
 
-## Frontend Components
+video: File
+title: string
+description: string
+category: string
+tags: string[]
+```
 
-### Video Player
-- Custom controls
-- Playback speed control
-- Quality selection
-- Fullscreen support
-- Progress bar with preview
+#### Get videos
+```http
+GET /api/videos
+```
 
-### Rich Text Editor
-- Formatting options
-- Image embedding
-- Code blocks
-- Markdown support
-- Auto-save
+### Wikis
 
-### Search Component
-- Real-time search
-- Filter by type
-- Sort options
-- Relevance ranking
+#### Create a wiki
+```http
+POST /api/wikis
+Content-Type: application/json
 
-## Security Features
+{
+    "title": "string",
+    "content": "string",
+    "categories": "string[]",
+    "tags": "string[]"
+}
+```
 
-- Password hashing with bcrypt
-- JWT authentication
-- Rate limiting
-- File upload restrictions
-- Input validation
-- XSS protection
+#### Get wikis
+```http
+GET /api/wikis
+```
+
+## Implementation Guide
+
+### 1. User Authentication
+
+The authentication system is implemented using JWT (JSON Web Tokens). Key files:
+- `models/User.js`: User model with password hashing
+- `routes/auth.js`: Authentication routes
+- `middleware/auth.js`: Authentication middleware
+
+To implement signup/login:
+1. Frontend sends credentials to respective endpoints
+2. Backend validates, creates/authenticates user
+3. JWT token is returned and should be stored in localStorage
+4. Include token in Authorization header for protected routes
+
+### 2. Video Upload
+
+Video upload uses AWS S3 for storage. Implementation steps:
+1. Configure AWS S3 credentials in `.env`
+2. Use multer for handling file uploads
+3. Generate presigned URLs for video upload/viewing
+4. Store video metadata in MongoDB
+5. Handle video processing status
+
+### 3. Wiki System
+
+Wiki system supports collaborative editing. Implementation:
+1. Create new wiki through POST endpoint
+2. Support markdown content
+3. Track revision history
+4. Implement contributor system
+5. Add categories and tags
+
+### 4. Frontend Integration
+
+1. Use the provided API endpoints in your frontend code
+2. Implement proper error handling
+3. Add loading states for async operations
+4. Handle token expiration and refresh
 
 ## Contributing
 
 1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
 5. Open a Pull Request
 
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
-
-## Support
-
-For support, email support@unlockedlibrary.com or join our Discord server.
-
-## Acknowledgments
-
-- [Express.js](https://expressjs.com/)
-- [MongoDB](https://www.mongodb.com/)
-- [Tailwind CSS](https://tailwindcss.com/)
-- [AWS S3](https://aws.amazon.com/s3/)
+This project is licensed under the MIT License - see the LICENSE file for details
