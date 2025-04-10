@@ -1,7 +1,7 @@
 const express = require('express');
 const jwt = require('jsonwebtoken');
-const User = require('../models/User');
 const { auth } = require('../middleware/auth');
+const { User } = require('../models/sequelize'); // Updated import for Sequelize
 const router = express.Router();
 
 // Register new user
@@ -11,7 +11,9 @@ router.post('/register', async (req, res) => {
 
         // Check if user already exists
         const existingUser = await User.findOne({ 
-            $or: [{ email }, { username }] 
+            where: { 
+                [Op.or]: [{ email }, { username }] 
+            }
         });
 
         if (existingUser) {
@@ -21,13 +23,11 @@ router.post('/register', async (req, res) => {
         }
 
         // Create new user
-        const user = new User({
+        const user = await User.create({
             username,
             email,
             password
         });
-
-        await user.save();
 
         // Generate JWT token
         const token = jwt.sign(
@@ -40,7 +40,7 @@ router.post('/register', async (req, res) => {
             message: 'User registered successfully',
             token,
             user: {
-                id: user._id,
+                id: user.id, // Updated for Sequelize
                 username: user.username,
                 email: user.email,
                 role: user.role
@@ -60,7 +60,7 @@ router.post('/login', async (req, res) => {
         const { username, password } = req.body;
 
         // Find user by username
-        const user = await User.findOne({ username });
+        const user = await User.findOne({ where: { username } });
         if (!user) {
             return res.status(401).json({ 
                 message: 'Invalid credentials' 
@@ -68,7 +68,7 @@ router.post('/login', async (req, res) => {
         }
 
         // Check password
-        const isMatch = await user.comparePassword(password);
+        const isMatch = await user.comparePassword(password); // Assuming this method is still valid
         if (!isMatch) {
             return res.status(401).json({ 
                 message: 'Invalid credentials' 
@@ -103,8 +103,11 @@ router.post('/login', async (req, res) => {
 // Get current user profile
 router.get('/profile', auth, async (req, res) => {
     try {
-        const user = await User.findById(req.user._id)
-            .select('-password');
+        const user = await User.findByPk(req.user.id); // Updated for Sequelize
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+        res.json(user);
         res.json(user);
     } catch (error) {
         res.status(500).json({ 
@@ -129,10 +132,11 @@ router.patch('/profile', auth, async (req, res) => {
     }
 
     try {
+        const user = await User.findByPk(req.user.id); // Updated for Sequelize
         updates.forEach(update => {
-            req.user[update] = req.body[update];
+            user[update] = req.body[update];
         });
-        await req.user.save();
+        await user.save();
 
         res.json({
             message: 'Profile updated successfully',
