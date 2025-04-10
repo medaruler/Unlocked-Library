@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Unlocked Library</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    
+    <!-- Quill Editor -->
+    <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+    <script src="https://cdn.quilljs.com/1.3.6/quill.min.js"></script>
+    
+    <!-- Custom Styles -->
+    <link rel="stylesheet" href="/css/styles.css">
+
+    <!-- Service Worker Registration -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/js/service-worker.js')
+                    .then(registration => {
+                        console.log('ServiceWorker registration successful');
+                    })
+                    .catch(err => {
+                        console.log('ServiceWorker registration failed: ', err);
+                    });
+            });
+        }
+    </script>
+</head>
+<body class="bg-gray-50 dark:bg-gray-900">
+    <!-- Navigation -->
+    <nav class="fixed top-0 left-0 right-0 bg-white dark:bg-gray-800 shadow-md z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <a href="/" class="flex items-center space-x-2">
+                        <i class="fas fa-bolt text-2xl text-primary-500"></i>
+                        <span class="text-xl font-bold text-gray-900 dark:text-white">The Unlocked Library</span>
+                    </a>
+                </div>
+                
+                <div class="flex items-center space-x-4">
+                    <button id="darkModeToggle" class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700">
+                        <i class="fas fa-moon text-gray-600 dark:text-gray-300"></i>
+                    </button>
+                    
+                    <div id="authButtons" class="flex items-center space-x-2">
+                        <button onclick="UI.toggleModal('loginModal')" 
+                                class="px-4 py-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white">
+                            Login
+                        </button>
+                        <button onclick="UI.toggleModal('registerModal')" 
+                                class="px-4 py-2 bg-primary-500 text-white rounded-md hover:bg-primary-600">
+                            Sign Up
+                        </button>
+                    </div>
+                    
+                    <div id="userProfile" class="hidden flex items-center space-x-2">
+                        <span class="username text-gray-900 dark:text-white"></span>
+                        <button onclick="AuthHandlers.logout()" 
+                                class="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white">
+                            Logout
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <main class="pt-20">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+            <div class="text-center">
+                <h1 class="text-4xl sm:text-5xl md:text-6xl font-bold text-gray-900 dark:text-white mb-4">
+                    Freedom of Expression
+                    <span class="block text-primary-500">Without Boundaries</span>
+                </h1>
+                <p class="text-xl text-gray-600 dark:text-gray-300 mb-8">
+                    Share your thoughts, videos, and knowledge freely. No censorship, no restrictions.
+                </p>
+                <button onclick="UI.toggleModal('uploadModal')" 
+                        class="px-8 py-4 bg-primary-500 text-white rounded-md text-lg font-semibold hover:bg-primary-600 transform transition hover:scale-105">
+                    Start Sharing
+                </button>
+            </div>
+        </div>
+
+        <!-- Features Section -->
+        <div class="bg-white dark:bg-gray-800">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+                <h2 class="text-3xl font-bold text-center text-gray-900 dark:text-white mb-12">
+                    Embrace Different Perspectives
+                </h2>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    <!-- Video Sharing -->
+                    <div class="p-6 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                        <div class="w-12 h-12 bg-primary-500 rounded-full flex items-center justify-center mb-4">
+                            <i class="fas fa-video text-white text-xl"></i>
+                        </div>
+                        <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+                            Video Sharing
+                        </h3>
+                        <p class="text-gray-600 dark:text-gray-300">
+                            Upload and share videos without restrictions. Express your views freely.
+                        </p>
+                    </div>
+
+                    <!-- Wiki Posts -->
+                    <div class="p-6 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                        <div class="w-12 h-12 bg-primary-500 rounded-full flex items-center justify-center mb-4">
+                            <i class="fas fa-book text-white text-xl"></i>
+                        </div>
+                        <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+                            Wiki Posts
+                        </h3>
+                        <p class="text-gray-600 dark:text-gray-300">
+                            Create and edit wiki posts. Share knowledge and perspectives.
+                        </p>
+                    </div>
+
+                    <!-- Community -->
+                    <div class="p-6 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                        <div class="w-12 h-12 bg-primary-500 rounded-full flex items-center justify-center mb-4">
+                            <i class="fas fa-users text-white text-xl"></i>
+                        </div>
+                        <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+                            Community
+                        </h3>
+                        <p class="text-gray-600 dark:text-gray-300">
+                            Connect with like-minded individuals. Engage in meaningful discussions.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Modals -->
+    <!-- Login Modal -->
+    <div id="loginModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+        <div class="bg-white dark:bg-gray-800 rounded-lg p-8 max-w-md w-full relative">
+            <button onclick="UI.toggleModal('loginModal')" class="absolute top-4 right-4 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
+                <i class="fas fa-times"></i>
+            </button>
+            <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-6">Login</h2>
+            <form id="loginForm" onsubmit="AuthHandlers.login(event)">
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-gray-700 dark:text-gray-300 mb-2">Username</label>
+                        <input type="text" name="username" required
+                               class="w-full px-4 py-2 border rounded-md dark:bg-gray-700 dark:border-gray-600">
+                    </div>
+                    <div>
+                        <label class="block text-gray-700 dark:text-gray-300 mb-2">Password</label>
+                        <input type="password" name="password" required
+                               class="w-full px-4 py-2 border rounded-md dark:bg-gray-700 dark:border-gray-600">
+                    </div>
+                    <button type="submit" 
+                            class="w-full px-4 py-2 bg-primary-500 text-white rounded-md hover:bg-primary-600">
+                        Login
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Register Modal -->
+    <div id="registerModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+        <div class="bg-white dark:bg-gray-800 rounded-lg p-8 max-w-md w-full relative">
+            <button onclick="UI.toggleModal('registerModal')" class="absolute top-4 right-4 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
+                <i class="fas fa-times"></i>
+            </button>
+            <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-6">Sign Up</h2>
+
+            <form id="registerForm" onsubmit="AuthHandlers.register(event)">
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-gray-700 dark:text-gray-300 mb-2">Username</label>
+                        <input type="text" name="username" required
+                               class="w-full px-4 py-2 border rounded-md dark:bg-gray-700 dark:border-gray-600">
+                    </div>
+                    <div>
+                        <label class="block text-gray-700 dark:text-gray-300 mb-2">Email</label>
+                        <input type="email" name="email" required
+                               class="w-full px-4 py-2 border rounded-md dark:bg-gray-700 dark:border-gray-600">
+                    </div>
+                    <div>
+                        <label class="block text-gray-700 dark:text-gray-300 mb-2">Password</label>
+                        <input type="password" name="password" required
+                               class="w-full px-4 py-2 border rounded-md dark:bg-gray-700 dark:border-gray-600">
+                    </div>
+                    <button type="submit" 
+                            class="w-full px-4 py-2 bg-primary-500 text-white rounded-md hover:bg-primary-600">
+                        Sign Up
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Upload Modal -->
+    <div id="uploadModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+        <div class="bg-white dark:bg-gray-800 rounded-lg p-8 max-w-md w-full relative">
+            <button onclick="UI.toggleModal('uploadModal')" class="absolute top-4 right-4 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
+                <i class="fas fa-times"></i>
+            </button>
+            <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-6">Upload Content</h2>
+            <div class="space-y-4">
+                <button onclick="UI.toggleModal('uploadVideoModal')"
+                        class="w-full px-4 py-2 bg-primary-500 text-white rounded-md hover:bg-primary-600">
+                    Upload Video
+                </button>
+                <button onclick="UI.toggleModal('createWikiModal')"
+                        class="w-full px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600">
+                    Create Wiki Post
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Upload Video Modal -->
+    <div id="uploadVideoModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+        <div class="bg-white dark:bg-gray-800 rounded-lg p-8 max-w-md w-full relative">
+            <button onclick="UI.toggleModal('uploadVideoModal')" class="absolute top-4 right-4 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
+                <i class="fas fa-times"></i>
+            </button>
+            <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-6">Upload Video</h2>
+            <form id="uploadVideoForm" onsubmit="VideoHandlers.upload(event)">
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-gray-700 dark:text-gray-300 mb-2">Title</label>
+                        <input type="text" name="title" required
+                               class="w-full px-4 py-2 border rounded-md dark:bg-gray-700 dark:border-gray-600">
+                    </div>
+                    <div>
+                        <label class="block text-gray-700 dark:text-gray-300 mb-2">Description</label>
+                        <textarea name="description" required
+                                  class="w-full px-4 py-2 border rounded-md dark:bg-gray-700 dark:border-gray-600"></textarea>
+                    </div>
+                    <div>
+                        <label class="block text-gray-700 dark:text-gray-300 mb-2">Video File</label>
+                        <input type="file" name="video" accept="video/*" required
+                               class="w-full px-4 py-2 border rounded-md dark:bg-gray-700 dark:border-gray-600">
+                    </div>
+                    <div>
+                        <label class="block text-gray-700 dark:text-gray-300 mb-2">Category</label>
+                        <select name="category" required
+                                class="w-full px-4 py-2 border rounded-md dark:bg-gray-700 dark:border-gray-600">
+                            <option value="politics">Politics</option>
+                            <option value="education">Education</option>
+                            <option value="entertainment">Entertainment</option>
+                            <option value="news">News</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-gray-700 dark:text-gray-300 mb-2">Tags</label>
+                        <input type="text" name="tags" placeholder="Comma separated tags"
+                               class="w-full px-4 py-2 border rounded-md dark:bg-gray-700 dark:border-gray-600">
+                    </div>
+                    <button type="submit" 
+                            class="w-full px-4 py-2 bg-primary-500 text-white rounded-md hover:bg-primary-600">
+                        Upload
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Create Wiki Modal -->
+    <div id="createWikiModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+        <div class="bg-white dark:bg-gray-800 rounded-lg p-8 max-w-4xl w-full relative">
+            <button onclick="UI.toggleModal('createWikiModal')" class="absolute top-4 right-4 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
+                <i class="fas fa-times"></i>
+            </button>
+            <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-6">Create Wiki Post</h2>
+            <form id="createWikiForm" onsubmit="WikiHandlers.create(event)">
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-gray-700 dark:text-gray-300 mb-2">Title</label>
+                        <input type="text" name="title" required
+                               class="w-full px-4 py-2 border rounded-md dark:bg-gray-700 dark:border-gray-600">
+                    </div>
+                    <div>
+                        <label class="block text-gray-700 dark:text-gray-300 mb-2">Content</label>
+                        <div id="wikiEditor" class="min-h-[300px] bg-white dark:bg-gray-700 rounded-md border border-gray-200 dark:border-gray-600"></div>
+                    </div>
+                    <div>
+                        <label class="block text-gray-700 dark:text-gray-300 mb-2">Categories</label>
+                        <input type="text" name="categories" placeholder="Comma separated categories"
+                               class="w-full px-4 py-2 border rounded-md dark:bg-gray-700 dark:border-gray-600">
+                    </div>
+                    <div>
+                        <label class="block text-gray-700 dark:text-gray-300 mb-2">Tags</label>
+                        <input type="text" name="tags" placeholder="Comma separated tags"
+                               class="w-full px-4 py-2 border rounded-md dark:bg-gray-700 dark:border-gray-600">
+                    </div>
+                    <button type="submit" 
+                            class="w-full px-4 py-2 bg-primary-500 text-white rounded-md hover:bg-primary-600">
+                        Create
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Content Feed Section -->
+    <section class="bg-gray-50 dark:bg-gray-900 py-12">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <!-- Feed Navigation -->
+            <div class="flex justify-between items-center mb-8">
+                <div class="flex space-x-4">
+                    <button onclick="ContentFeed.switchTab('all')" 
+                            class="px-4 py-2 rounded-md bg-white dark:bg-gray-800 shadow-sm text-gray-900 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700 active-tab" 
+                            id="allTab">
+                        All Content
+                    </button>
+                    <button onclick="ContentFeed.switchTab('my')" 
+                            class="px-4 py-2 rounded-md bg-white dark:bg-gray-800 shadow-sm text-gray-900 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700" 
+                            id="myTab">
+                        My Content
+                    </button>
+                </div>
+                <div class="flex space-x-4">
+                    <button onclick="ContentFeed.switchType('videos')" 
+                            class="px-4 py-2 rounded-md bg-white dark:bg-gray-800 shadow-sm text-gray-900 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700 active-type" 
+                            id="videosType">
+                        Videos
+                    </button>
+                    <button onclick="ContentFeed.switchType('wikis')" 
+                            class="px-4 py-2 rounded-md bg-white dark:bg-gray-800 shadow-sm text-gray-900 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700" 
+                            id="wikisType">
+                        Wiki Posts
+                    </button>
+                </div>
+            </div>
+
+            <!-- Content Grid -->
+            <div id="contentGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <!-- Content will be dynamically inserted here -->
+            </div>
+
+            <!-- Load More Button -->
+            <div class="text-center mt-8">
+                <button onclick="ContentFeed.loadMore()" 
+                        class="px-6 py-3 bg-primary-500 text-white rounded-md hover:bg-primary-600">
+                    Load More
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Scripts -->
+    <script src="/js/config.js"></script>
+    <script src="/js/utils.js"></script>
+    <script src="/js/components.js"></script>
+    <script src="/js/main.js"></script>
+</body>
+</html>
